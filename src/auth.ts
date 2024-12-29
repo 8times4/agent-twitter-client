@@ -4,6 +4,8 @@ import { Headers } from 'headers-polyfill';
 import { FetchTransformOptions } from './api';
 import { TwitterApi } from 'twitter-api-v2';
 import { Profile } from './profile';
+import { generateUserAgent } from './helpers/useragent';
+import { Constants } from './helpers/ua-constants';
 
 export interface TwitterAuthOptions {
   fetch: typeof fetch;
@@ -12,6 +14,16 @@ export interface TwitterAuthOptions {
 
 export interface TwitterAuth {
   fetch: typeof fetch;
+
+  /**
+   * Get the current user agent and sec-ch-ua headers
+   */
+  getUserAgent(): { userAgent?: string; secChUa?: string };
+
+  /**
+   * Set the user agent and sec-ch-ua headers
+   */
+  setUserAgent(userAgent?: string, secChUa?: string): void;
 
   /**
    * Returns the current cookie jar.
@@ -117,6 +129,8 @@ export class TwitterGuestAuth implements TwitterAuth {
   protected guestToken?: string;
   protected guestCreatedAt?: Date;
   protected v2Client: TwitterApi | null;
+  private _userAgent?: string;
+  private _secChUa?: string;
 
   fetch: typeof fetch;
 
@@ -199,6 +213,10 @@ export class TwitterGuestAuth implements TwitterAuth {
       throw new Error('Authentication token is null or undefined.');
     }
 
+    const [newUserAgent, newSecChUa] = generateUserAgent();
+    headers.set('user-agent', newUserAgent);
+    headers.set('sec-ch-ua', newSecChUa);
+
     headers.set('authorization', `Bearer ${this.bearerToken}`);
     headers.set('x-guest-token', token);
 
@@ -248,6 +266,7 @@ export class TwitterGuestAuth implements TwitterAuth {
     const headers = new Headers({
       Authorization: `Bearer ${this.bearerToken}`,
       Cookie: await this.getCookieString(),
+      ...Constants.BASE_HEADERS,
     });
 
     const res = await this.fetch(guestActivateUrl, {
@@ -287,5 +306,17 @@ export class TwitterGuestAuth implements TwitterAuth {
         this.guestCreatedAt <
           new Date(new Date().valueOf() - 3 * 60 * 60 * 1000))
     );
+  }
+
+  getUserAgent(): { userAgent?: string; secChUa?: string } {
+    return {
+      userAgent: this._userAgent,
+      secChUa: this._secChUa,
+    };
+  }
+
+  setUserAgent(userAgent?: string, secChUa?: string): void {
+    this._userAgent = userAgent;
+    this._secChUa = secChUa;
   }
 }

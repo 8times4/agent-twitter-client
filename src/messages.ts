@@ -245,18 +245,23 @@ export async function getDirectMessageConversations(
   }`;
   const cookies = await auth.cookieJar().getCookies(url);
   const xCsrfToken = cookies.find((cookie) => cookie.key === 'ct0');
+  const { userAgent, secChUa } = auth.getUserAgent();
 
   const headers = new Headers({
     authorization: `Bearer ${(auth as any).bearerToken}`,
     cookie: await auth.cookieJar().getCookieString(url),
     'content-type': 'application/json',
     'User-Agent':
+      userAgent ||
       'Mozilla/5.0 (Linux; Android 11; Nokia G20) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.88 Mobile Safari/537.36',
     'x-guest-token': (auth as any).guestToken,
     'x-twitter-auth-type': 'OAuth2Client',
     'x-twitter-active-user': 'yes',
     'x-csrf-token': xCsrfToken?.value as string,
   });
+  if (secChUa) {
+    headers.set('sec-ch-ua', secChUa);
+  }
 
   const response = await fetch(finalUrl, {
     method: 'GET',
@@ -289,18 +294,23 @@ export async function sendDirectMessage(
 
   const cookies = await auth.cookieJar().getCookies(url);
   const xCsrfToken = cookies.find((cookie) => cookie.key === 'ct0');
+  const { userAgent, secChUa } = auth.getUserAgent();
 
   const headers = new Headers({
     authorization: `Bearer ${(auth as any).bearerToken}`,
     cookie: await auth.cookieJar().getCookieString(url),
     'content-type': 'application/json',
     'User-Agent':
+      userAgent ||
       'Mozilla/5.0 (Linux; Android 11; Nokia G20) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.88 Mobile Safari/537.36',
     'x-guest-token': (auth as any).guestToken,
     'x-twitter-auth-type': 'OAuth2Client',
     'x-twitter-active-user': 'yes',
     'x-csrf-token': xCsrfToken?.value as string,
   });
+  if (secChUa) {
+    headers.set('sec-ch-ua', secChUa);
+  }
 
   const payload = {
     conversation_id: `${conversation_id}`,

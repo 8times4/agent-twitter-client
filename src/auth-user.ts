@@ -8,6 +8,7 @@ import { Type, type Static } from '@sinclair/typebox';
 import { Check } from '@sinclair/typebox/value';
 import * as OTPAuth from 'otpauth';
 import { LegacyUserRaw, parseProfile, type Profile } from './profile';
+import { generateUserAgent } from './helpers/useragent';
 
 interface TwitterUserAuthFlowInitRequest {
   flow_name: string;
@@ -58,6 +59,25 @@ export class TwitterUserAuth extends TwitterGuestAuth {
 
   constructor(bearerToken: string, options?: Partial<TwitterAuthOptions>) {
     super(bearerToken, options);
+  }
+
+  async installTo(headers: Headers): Promise<void> {
+    headers.set('authorization', `Bearer ${this.bearerToken}`);
+    headers.set('cookie', await this.getCookieString());
+
+    // For user auth, use consistent userAgent and secChUa if set
+    const { userAgent, secChUa } = this.getUserAgent();
+    if (userAgent && secChUa) {
+      headers.set('user-agent', userAgent);
+      headers.set('sec-ch-ua', secChUa);
+    } else {
+      const [newUserAgent, newSecChUa] = generateUserAgent();
+      this.setUserAgent(newUserAgent, newSecChUa);
+      headers.set('user-agent', newUserAgent);
+      headers.set('sec-ch-ua', newSecChUa);
+    }
+
+    await this.installCsrfToken(headers);
   }
 
   async isLoggedIn(): Promise<boolean> {
@@ -158,12 +178,6 @@ export class TwitterUserAuth extends TwitterGuestAuth {
     if (xCsrfToken) {
       headers.set('x-csrf-token', xCsrfToken.value);
     }
-  }
-
-  async installTo(headers: Headers): Promise<void> {
-    headers.set('authorization', `Bearer ${this.bearerToken}`);
-    headers.set('cookie', await this.getCookieString());
-    await this.installCsrfToken(headers);
   }
 
   private async initLogin() {

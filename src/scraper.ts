@@ -75,9 +75,17 @@ import {
   fetchAudioSpaceById,
   fetchAuthenticatePeriscope,
   fetchBrowseSpaceTopics,
-  fetchCommunitySelectQuery, fetchLiveVideoStreamStatus, fetchLoginTwitterToken
+  fetchCommunitySelectQuery,
+  fetchLiveVideoStreamStatus,
+  fetchLoginTwitterToken,
 } from './spaces';
-import {AudioSpace, Community, LiveVideoStreamStatus, LoginTwitterTokenResponse, Subtopic} from './types/spaces';
+import {
+  AudioSpace,
+  Community,
+  LiveVideoStreamStatus,
+  LoginTwitterTokenResponse,
+  Subtopic,
+} from './types/spaces';
 
 const twUrl = 'https://twitter.com';
 const UserTweetsUrl =
@@ -105,6 +113,21 @@ export class Scraper {
   private auth!: TwitterAuth;
   private authTrends!: TwitterAuth;
   private token: string;
+
+  /**
+   * Get the current user agent configuration
+   */
+  public getUserAgent() {
+    return this.auth.getUserAgent();
+  }
+
+  /**
+   * Set a specific user agent configuration
+   */
+  public setUserAgent(userAgent?: string, secChUa?: string) {
+    this.auth.setUserAgent(userAgent, secChUa);
+    this.authTrends.setUserAgent(userAgent, secChUa);
+  }
 
   /**
    * Creates a new Scraper object.
@@ -737,6 +760,7 @@ export class Scraper {
       accessToken,
       accessSecret,
     );
+    const { userAgent, secChUa } = userAuth.getUserAgent();
     this.auth = userAuth;
     this.authTrends = userAuth;
   }
@@ -945,7 +969,7 @@ export class Scraper {
    * @returns The status of the Audio Space stream.
    */
   public async getAudioSpaceStreamStatus(
-      mediaKey: string,
+    mediaKey: string,
   ): Promise<LiveVideoStreamStatus> {
     return await fetchLiveVideoStreamStatus(mediaKey, this.auth);
   }
@@ -958,7 +982,7 @@ export class Scraper {
    * @returns The status of the Audio Space stream.
    */
   public async getAudioSpaceStatus(
-      audioSpaceId: string,
+    audioSpaceId: string,
   ): Promise<LiveVideoStreamStatus> {
     const audioSpace = await this.getAudioSpaceById(audioSpaceId);
 
@@ -984,7 +1008,7 @@ export class Scraper {
    * @returns The response containing the cookie and user information.
    */
   public async loginTwitterToken(
-      jwt: string,
+    jwt: string,
   ): Promise<LoginTwitterTokenResponse> {
     return await fetchLoginTwitterToken(jwt, this.auth);
   }
